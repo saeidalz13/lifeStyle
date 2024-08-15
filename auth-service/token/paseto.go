@@ -1,7 +1,7 @@
 package token
 
 import (
-	"auth-service/internal/autherr"
+	"github.com/saeidalz13/lifestyle/auth-service/internal/autherr"
 	"crypto/rand"
 	"time"
 

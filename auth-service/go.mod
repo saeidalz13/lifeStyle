@@ -1,4 +1,4 @@
-module auth-service
+module github.com/saeidalz13/lifestyle/auth-service
 
 go 1.22.5
 

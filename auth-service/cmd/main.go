@@ -1,12 +1,14 @@
 package main
 
 import (
-	"auth-service/internal/apiutils"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/saeidalz13/lifestyle/auth-service/handlers"
+	"github.com/saeidalz13/lifestyle/auth-service/internal/apiutils"
+	"github.com/saeidalz13/lifestyle/auth-service/token"
 )
 
 func main() {
@@ -17,8 +19,14 @@ func main() {
 	}
 	port := os.Getenv("PORT")
 
+	tokenManager, err := token.BuildPasetoTokenManager()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	server := &http.Server{
-		Addr: "127.0.0.1" + ":" + port,
+		Addr:    "127.0.0.1" + ":" + port,
+		Handler: handlers.NewAuthHandler(tokenManager),
 	}
 
 	log.Printf("Listening to %s...\n", server.Addr)
