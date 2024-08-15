@@ -1,3 +1,8 @@
 package token
 
-const PasetoCookieName = "paseto-ls"
+import "time"
+
+const (
+	PasetoCookieName     = "paseto-ls"
+	PasetoCookieDuration = time.Hour * 12
+)
