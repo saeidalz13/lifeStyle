@@ -86,8 +86,8 @@ func (a *AuthHandler) processSignUp(w http.ResponseWriter, reqAuth *models.ReqAu
 		return false
 	}
 
-	if !isPasswordValid(string(reqAuth.Password)) {
-		writeApiErrResp(w, http.StatusBadRequest, autherr.ErrAuthInvalidPassword)
+	if err := validatePassword(string(reqAuth.Password)); err != nil {
+		writeApiErrResp(w, http.StatusBadRequest, err)
 		return false
 	}
 
@@ -120,9 +120,9 @@ func isEmailValid(email string) bool {
 	return re.MatchString(email)
 }
 
-func isPasswordValid(password string) bool {
+func validatePassword(password string) error {
 	if len(password) < 8 {
-		return false
+		return autherr.ErrAuthShortPassword
 	}
 
 	// The regex pattern `[!@#$%^&*(),.?":{}|<>]` matches common special characters
@@ -134,5 +134,9 @@ func isPasswordValid(password string) bool {
 	digitRe := regexp.MustCompile(digitRegex)
 
 	// Check if the password matches the regex pattern
-	return specialCharRe.MatchString(password) && digitRe.MatchString(password)
+	if specialCharRe.MatchString(password) && digitRe.MatchString(password) {
+        return autherr.ErrAuthInvalidPassword
+    }
+
+    return nil
 }
