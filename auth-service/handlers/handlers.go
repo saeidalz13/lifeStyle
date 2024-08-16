@@ -5,19 +5,14 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"regexp"
 	"time"
 
 	"github.com/saeidalz13/lifestyle/auth-service/internal/apierr"
 	"github.com/saeidalz13/lifestyle/auth-service/internal/autherr"
 	"github.com/saeidalz13/lifestyle/auth-service/models"
+	"github.com/saeidalz13/lifestyle/auth-service/routes"
 	"github.com/saeidalz13/lifestyle/auth-service/token"
 	"golang.org/x/crypto/bcrypt"
-)
-
-const (
-	ActionLogin  string = "login"
-	ActionSignup string = "signup"
 )
 
 type AuthHandler struct {
@@ -37,24 +32,31 @@ func (a *AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var reqAuth models.ReqAuth
-	if err := json.Unmarshal(bodyBytes, &reqAuth); err != nil {
-		writeApiErrResp(w, http.StatusBadRequest, apierr.ErrApiUnmarshalBody)
-		return
-	}
-
 	var statusCode int
-	switch r.URL.Query().Get("action") {
-	case ActionLogin:
+	switch r.URL.Path {
+	case routes.Login:
+		reqAuth, err = extractAuthBody(bodyBytes)
+		if err != nil {
+			writeApiErrResp(w, http.StatusBadRequest, apierr.ErrApiUnmarshalBody)
+		}
 		if !a.processLogin(w, &reqAuth) {
 			return
 		}
 		statusCode = http.StatusOK
 
-	case ActionSignup:
+	case routes.Signup:
+		reqAuth, err = extractAuthBody(bodyBytes)
+		if err != nil {
+			writeApiErrResp(w, http.StatusBadRequest, apierr.ErrApiUnmarshalBody)
+		}
 		if !a.processSignUp(w, &reqAuth) {
 			return
 		}
 		statusCode = http.StatusCreated
+
+	case routes.TokenAuth:
+		a.authenticateReqByCookie(w, r)
+		return
 
 	default:
 		http.Error(w, "invalid action of auth", http.StatusBadRequest)
@@ -114,29 +116,18 @@ func (a *AuthHandler) processLogin(w http.ResponseWriter, reqAuth *models.ReqAut
 	return true
 }
 
-func isEmailValid(email string) bool {
-	regex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
-	re := regexp.MustCompile(regex)
-	return re.MatchString(email)
-}
-
-func validatePassword(password string) error {
-	if len(password) < 8 {
-		return autherr.ErrAuthShortPassword
+func (a *AuthHandler) authenticateReqByCookie(w http.ResponseWriter, r *http.Request) {
+	pasetoCookie, err := r.Cookie(token.PasetoCookieName)
+	if err != nil {
+		writeApiErrResp(w, http.StatusUnauthorized, err)
+		return
 	}
 
-	// The regex pattern `[!@#$%^&*(),.?":{}|<>]` matches common special characters
-	regex := `[!@#$%^&*(),.?":{}|<>]`
-	specialCharRe := regexp.MustCompile(regex)
+	pasetoPayload, err := a.tokenManager.VerifyToken(pasetoCookie.Value)
+	if err != nil {
+		writeApiErrResp(w, http.StatusUnauthorized, err)
+		return
+	}
 
-	// Patter for digit existence
-	digitRegex := `[0-9]`
-	digitRe := regexp.MustCompile(digitRegex)
-
-	// Check if the password matches the regex pattern
-	if specialCharRe.MatchString(password) && digitRe.MatchString(password) {
-        return autherr.ErrAuthInvalidPassword
-    }
-
-    return nil
+	json.NewEncoder(w).Encode(models.RespTokenAuth{Email: pasetoPayload.Email})
 }
