@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.Lshortfile)
 	if os.Getenv("STAGE") != apiutils.ApiStageProd {
 		if err := godotenv.Load("./config/.env.local"); err != nil {
 			log.Fatalln(err)
