@@ -27,15 +27,15 @@ func checkErr(err error) {
 }
 
 func mustMigrate(db *sql.DB) {
-	driver, err := postgres.WithInstance(db, &postgres.Config{DatabaseName: "auth_lifestyle"})
+	driver, err := postgres.WithInstance(db, &postgres.Config{DatabaseName: "lifestyle_auth"})
 	checkErr(err)
 
-	m, err := migrate.NewWithDatabaseInstance(migrationDir, "auth_lifestyle", driver)
+	m, err := migrate.NewWithDatabaseInstance(migrationDir, "lifestyle_auth", driver)
 	checkErr(err)
 
 	version, dirty, err := m.Version()
 	if err != nil {
-		if err == dberr.ErrNoMigration {
+		if err.Error() == dberr.ErrNoMigration.Error() {
 			log.Println(err)
 		} else {
 			log.Fatalln(err)
@@ -46,7 +46,7 @@ func mustMigrate(db *sql.DB) {
 	}
 
 	if err := m.Up(); err != nil {
-		if err == dberr.ErrMigrationNoChange || err == dberr.ErrFileNotExists {
+		if err.Error() == dberr.ErrMigrationNoChange.Error() || err.Error() == dberr.ErrFileNotExists.Error() {
 			return
 		}
 

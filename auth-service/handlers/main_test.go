@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/saeidalz13/lifestyle/auth-service/handlers"
 	"github.com/saeidalz13/lifestyle/auth-service/token"
 )
@@ -21,6 +22,8 @@ const (
 var (
 	validToken  string
 	authHandler *handlers.AuthHandler
+
+	testMock sqlmock.Sqlmock
 )
 
 func checkErr(err error) {
@@ -37,7 +40,11 @@ func TestMain(m *testing.M) {
 	checkErr(err)
 	validToken = vt
 
-	ah := handlers.NewAuthHandler(tm)
+	db, mock, err := sqlmock.New()
+	checkErr(err)
+	testMock = mock
+
+	ah := handlers.NewAuthHandler(tm, db)
 	authHandler = ah
 
 	os.Exit(m.Run())

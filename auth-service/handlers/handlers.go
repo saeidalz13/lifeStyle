@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"io"
 	"log"
@@ -17,10 +18,11 @@ import (
 
 type AuthHandler struct {
 	tokenManager token.TokenManger
+	db           *sql.DB
 }
 
-func NewAuthHandler(ptm token.TokenManger) *AuthHandler {
-	return &AuthHandler{tokenManager: ptm}
+func NewAuthHandler(ptm token.TokenManger, db *sql.DB) *AuthHandler {
+	return &AuthHandler{tokenManager: ptm, db: db}
 }
 
 func (a *AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

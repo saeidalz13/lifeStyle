@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/saeidalz13/lifestyle/auth-service/db"
 	"github.com/saeidalz13/lifestyle/auth-service/handlers"
 	"github.com/saeidalz13/lifestyle/auth-service/internal/apiutils"
 	"github.com/saeidalz13/lifestyle/auth-service/token"
@@ -19,6 +20,9 @@ func main() {
 		}
 	}
 	port := os.Getenv("PORT")
+	dbUrl := os.Getenv("DATABASE_URL")
+
+	dbPsql := db.MustConnectDb(dbUrl)
 
 	tokenManager, err := token.BuildPasetoTokenManager()
 	if err != nil {
@@ -27,7 +31,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:    "127.0.0.1" + ":" + port,
-		Handler: handlers.NewAuthHandler(tokenManager),
+		Handler: handlers.NewAuthHandler(tokenManager, dbPsql),
 	}
 
 	log.Printf("Listening to %s...\n", server.Addr)
